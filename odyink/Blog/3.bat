@@ -3,6 +3,7 @@ title 电视直播
 color 02
 if exist .\Blog\exptmp\ rd /s /q .\Blog\exptmp
 mkdir .\Blog\exptmp >nul
+if exist .\wget.exe copy .\wget.exe \Blog\exptmp\wget.exe
     cd /d .\Blog\exptmp
 echo 下载所需软件
     PowerShell Invoke-WebRequest https://smgdata-1302226504.cos.accelerate.myqcloud.com/wget.exe -outfile wget.exe >nul
@@ -14,6 +15,8 @@ cls
 echo 解压文件中
 rem 7z e解压 ffplay.7z解压目标
 7z e ffplay.7z
+echo 设置音频输出
+set SDL_AUDIODRIVER=directsound
 title 电视直播
 :back
 cls
