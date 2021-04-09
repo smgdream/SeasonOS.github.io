@@ -3,7 +3,9 @@ title 电视直播
 color 02
 if exist .\Blog\exptmp\ rd /s /q .\Blog\exptmp
 mkdir .\Blog\exptmp >nul
-if exist .\wget.exe copy .\wget.exe \Blog\exptmp\wget.exe
+timeout /t 2 /nobreak >nul
+if exist .\wget.exe copy .\wget.exe .\Blog\exptmp\wget.exe
+if exist ..\wget.exe copy ..\wget.exe .\Blog\exptmp\wget.exe
     cd /d .\Blog\exptmp
 echo 下载所需软件
     PowerShell Invoke-WebRequest https://smgdata-1302226504.cos.accelerate.myqcloud.com/wget.exe -outfile wget.exe >nul

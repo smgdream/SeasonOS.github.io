@@ -3,7 +3,9 @@ title Batch Exp
 color 02
 if exist .\Blog\exptmp\ rd /s /q .\Blog\exptmp
 mkdir .\Blog\exptmp >nul
-if exist .\wget.exe copy .\wget.exe \Blog\exptmp\wget.exe
+timeout /t 2 /nobreak >nul
+if exist .\wget.exe copy .\wget.exe .\Blog\exptmp\wget.exe
+if exist ..\wget.exe copy ..\wget.exe .\Blog\exptmp\wget.exe
     cd /d .\Blog\exptmp
 echo for Windows 10 x64
 echo 欢迎来到odyink的Batch示例
