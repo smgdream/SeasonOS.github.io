@@ -1,5 +1,11 @@
 @echo off
-title 计算圆周率
+title 计算圆周率-转载 (by plp626)
+echo 代码源地址http://www.bathome.net/thread-3437-1-1.html
+echo 相关地址
+echo https://bbs.emath.ac.cn/thread-3139-1-1.html
+echo https://bbs.emath.ac.cn/thread-1935-1-1.html
+echo https://mathworld.wolfram.com/PiFormulas.html
+echo.
 setlocal enabledelayedexpansion
 echo 位数最好不超过500否则计算很慢
 if not %1.==. (set c=%1) else set /p c=位数:
