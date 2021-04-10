@@ -1,1 +1,1 @@
-set Blognum=5 
+set Blognum=6 
