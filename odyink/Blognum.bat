@@ -1,1 +1,0 @@
-set Blognum=6 

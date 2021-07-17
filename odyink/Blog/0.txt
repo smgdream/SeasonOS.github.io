@@ -1,1 +1,0 @@
-Odyink是由Andy(python)和SMG(Batch)制作的命令行个人博客软件 

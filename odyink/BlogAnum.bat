@@ -1,1 +1,0 @@
-set BlogAnum=4 
