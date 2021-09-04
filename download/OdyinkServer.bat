@@ -1,5 +1,5 @@
 @echo off
-rem 5.0
+rem 6.0
 rem 初始化
     chcp 936 >nul
     title Odyink Server
@@ -9,252 +9,363 @@ rem 初始化
     setlocal enabledelayedexpansion
 rem 检测安装
     :Check
-    if not exist odyink\Bloglist.bat goto :install
+    if not exist odyink\doclist.bat goto :Install
     cd odyink\
-rem 菜单
-    :menu
-    cls
-    echo 1.校阅文章
-    echo 2.导入文章
-    echo 3.删除文章
-    echo 4.退出程序
-    echo.
-    set Munum=
-    set /p Munum=序号：
-    cls
-    if "%Munum%"=="1" goto :VB
-    if "%Munum%"=="2" goto :cpBlog
-    if "%Munum%"=="3" goto :DBlog
-    if "%Munum%"=="4" ( cls & exit )
-    echo 输入无效
-    timeout /t 2 /nobreak >nul
-    goto :menu
 rem 校阅文章
+    :ViewDoc
+    cls
+    title Odyink Server
     rem 文章列表
-        :VB
+        call doclist.bat
+        echo.
+        echo.
+        call docnum.bat
+        if "%docNum:~-1%"==" " set docNum=%docNum:~0,-1%
+        echo 目前有%docNum%篇文章
+        echo.
+        if /i "%inputDocNum%"=="d" goto :DelDoc
+        echo a.导入文章 d.删除文章
+        echo s.程序设置 q.退出程序
+        set inputDocNum=none
+        set /p inputDocNum=文章序号：
         cls
-        call Bloglist.bat
-        echo.
-        echo.
-        call Blognum.bat
-        if "%Blognum:~-1%"==" " set Blognum=%Blognum:~0,-1%
-        echo 目前有%Blognum%篇文章
-        echo.
-        echo q.返回主页
-        set inputBlogNum=
-        set /p inputBlogNum=文章序号：
-        cls
-        if /i "%inputBlogNum%"=="q" goto :menu
+        if /i "%inputDocNum%"=="a" goto :AddDoc
+        if /i "%inputDocNum%"=="d" goto :ViewDoc
+        if /i "%inputDocNum%"=="s" goto :Setting
+        if /i "%inputDocNum%"=="q" ( cls & exit )
     rem 浏览文章
         rem 预处理
-            :NBBlog
-            set Doctype=
+            :NextBackDoc
+            set docType=none
         rem 检测文章是否存在
-            if not exist Blog\"%inputBlogNum%.bat" (
-                if not exist Blog\"%inputBlogNum%.txt" (
+            if not exist doc\"%inputDocNum%.bat" (
+                if not exist doc\"%inputDocNum%.txt" (
                     echo 文章不存在
                     timeout /t 2 /nobreak >nul
-                    goto :VB
+                    goto :ViewDoc
                 )
             )
         rem 显示文本内容Batch
             rem 因复合句中变量为复合句前的变量使用用延迟变量获得句中变量的动态值
-            if exist Blog\"%inputBlogNum%.bat" (
-                set Doctype=bat
+            if exist doc\"%inputDocNum%.bat" (
+                set docType=bat
+                title Odyink Server
                 echo 这是Batch扩展
-                echo 可在odyink\Blog\%inputBlogNum%.bat中查看代码
+                echo 可在odyink\doc\%inputDocNum%.bat中查看代码
                 echo 因Batch扩展特殊性执行后果自负
                 echo 查看代码是为了防病毒!!!
                 echo.
-                echo y.确认执行 c.编辑代码 e.取消执行
-                echo   b.上一篇 q.返回列表 n.下一篇
-                set batruncode=
-                set /p batruncode=操作序号:
-                if /i "!batruncode!"=="b" goto :backBlog
-                if /i "!batruncode!"=="n" goto :nextBlog
-                if /i "!batruncode!"=="c" (
-                    notepad.exe .\Blog\%inputBlogNum%.%Doctype%
+                echo     y.确认执行  q.返回列表
+                echo     c.编辑代码  t.更改标题
+                echo       b.上一篇  n.下一篇
+                set batActCode=none
+                set /p batActCode=操作序号:
+                if /i "!batActCode!"=="b" goto :BackDoc
+                if /i "!batActCode!"=="n" goto :NextDoc
+                if /i "!batActCode!"=="t" goto :ChangeTitle
+                if /i "!batActCode!"=="c" (
+                    notepad.exe .\doc\%inputDocNum%.!docType!
                     cls
-                    goto :NBBlog
+                    goto :NextBackDoc
                 )
-                if /i "!batruncode!"=="y" (
+                if /i "!batActCode!"=="y" (
                     cls
-                    cmd /c .\Blog\%inputBlogNum%.bat
+                    cmd /c .\doc\%inputDocNum%.bat
                     cls
                     rem 重新初始化
-                        rem 这里if复合句不能用@echo off会报错现移到:BlogconNE下一行
+                        rem 这里if复合句不能用@echo off会报错现移到:DocActInput下一行
                         rem 这里if复合句不用cd，它会自动恢复(原因不明)而且用cd会报错
                         chcp 936 >nul
                         title Odyink Server
                         color 07
-                    echo b.上一篇 q.返回列表 n.下一篇
-                    echo          c.编辑代码
-                    goto :BlogconNE
+                    echo   b.上一篇 q.返回列表 n.下一篇
+                    echo c.编辑代码 t.更改标题 r.重新执行
+                    goto :DocActInput
                 ) else (
-                    goto :VB
+                    goto :ViewDoc
                 )
             )
         rem 显示文本内容Text
-            set Doctype=txt
-            type Blog\%inputBlogNum%.txt
+            set docType=txt
+            title !title%inputDocNum%!
+            type doc\%inputDocNum%.txt
             echo.
             echo.
             echo b.上一篇 q.返回列表 n.下一篇
-            echo          c.修改文章
+            echo     c.修改文章  t.更改标题
             echo.
         rem 文章操作
-            :BlogconNE
+            :DocActInput
             @echo off
-            set Blogcon=
-            set /p Blogcon=操作序号：
-            if /i "%Blogcon%"=="b" goto :backBlog
-            if /i "%Blogcon%"=="n" goto :nextBlog
-            if /i "%Blogcon%"=="q" goto :VB
-            if /i "%Blogcon%"=="c" (
-                notepad.exe .\Blog\%inputBlogNum%.%Doctype%
+            set docActCode=none
+            set /p docActCode=操作序号：
+            if /i "%docActCode%"=="b" goto :BackDoc
+            if /i "%docActCode%"=="n" goto :NextDoc
+            if /i "%docActCode%"=="q" goto :ViewDoc
+            if /i "%docActCode%"=="t" goto :ChangeTitle
+            if /i "%docActCode%"=="c" (
+                notepad.exe .\doc\%inputDocNum%.%docType%
                 cls
-                goto :NBBlog
+                goto :NextBackDoc
+            )
+            if /i "%docActCode%"=="r" (
+                if /i "%docType%"=="bat" (
+                    cls
+                    goto :NextBackDoc
+                )
             )
             echo 输入无效
             echo.
-            goto :BlogconNE
+            goto :DocActInput
         rem 上一篇文章
-            :backBlog
-            set StartinputBlogNum=%inputBlogNum%
+            :BackDoc
+            set startInputDocNum=%inputDocNum%
             cls
             :Back
-            set /a inputBlogNum=%inputBlogNum%-1
-            set /a AV=%StartinputBlogNum%-%inputBlogNum%
+            set /a inputDocNum=%inputDocNum%-1
+            set /a AV=%startInputDocNum%-%inputDocNum%
             rem 两文章间距不可大于100
-            if %AV%==100 goto :NBBlog
-            if %inputBlogNum%==-1 goto :NBBlog
-            if exist Blog\%inputBlogNum%.bat goto :NBBlog
-            if exist Blog\%inputBlogNum%.txt goto :NBBlog
+            if %AV%==100 goto :NextBackDoc
+            if %inputDocNum%==-1 goto :NextBackDoc
+            if exist doc\%inputDocNum%.bat goto :NextBackDoc
+            if exist doc\%inputDocNum%.txt goto :NextBackDoc
             goto :Back
         rem 下一篇文章
-            :nextBlog
-            set StartinputBlogNum=%inputBlogNum%
+            :NextDoc
+            set startInputDocNum=%inputDocNum%
             cls
             :Next
-            set /a inputBlogNum=%inputBlogNum%+1
-            set /a AV=%inputBlogNum%-%StartinputBlogNum%
+            set /a inputDocNum=%inputDocNum%+1
+            set /a AV=%inputDocNum%-%startInputDocNum%
             rem 两文章间距不可大于100
-            if %AV%==100 goto :NBBlog
-            if exist Blog\%inputBlogNum%.bat goto :NBBlog
-            if exist Blog\%inputBlogNum%.txt goto :NBBlog
+            if %AV%==100 goto :NextBackDoc
+            if exist doc\%inputDocNum%.bat goto :NextBackDoc
+            if exist doc\%inputDocNum%.txt goto :NextBackDoc
             goto :Next
+        rem 更改标题
+            :ChangeTitle
+            cls
+            echo 输入q退出
+            echo 回车为原标题:!title%inputDocNum%!
+            set newTitle=!title%inputDocNum%!
+            set /p newTitle=新标题:
+            if /i "%newTitle%"=="q" goto :NextBackDoc
+            echo set title%inputDocNum%=%newTitle% >>doctitle.bat
+            call doctitle.bat
+            cls
+            goto :NextBackDoc
 rem 导入文章
-    :cpBlog
+    :AddDoc
     cls
-    set Docname=
-    set Blognum=
-    set NewBlognum=
-    set Blogtitle=
-    set Doctype=
     rem 输入需导入文章的信息
-        echo 支持GBK编码的txt和bat文件
+        echo 支持GB*编码的txt和bat文件
         echo 支持拖放文件(不要手贱)
         echo q.返回
         echo.
         rem 以管理员身份运行无法拖动导入文章
-        set /p Docname=文件绝对路径：
-        if %Docname%==q goto :menu
-        if not exist %Docname% goto :CantcpBlog
-        if %Docname:~-4,-3%==. set Doctype=%Docname:~-3%
-        if %Docname:~-5,-4%==. set Doctype=%Docname:~-4,-1%
-        if not "%Doctype%"=="bat" (
-            if not "%Doctype%"=="txt" (
-                echo 文件不支持
-                timeout /t 3 /nobreak >nul
-                goto :cpBlog
+        set docPath=none
+        set /p docPath=文件绝对路径：
+        if %docPath%==q goto :ViewDoc
+        if not exist %docPath% goto :NotExistDoc
+        rem 文章属性获取及设置
+            set docType=none
+            if %docPath:~-4,-3%==. set docType=%docPath:~-3%
+            if %docPath:~-5,-4%==. set docType=%docPath:~-4,-1%
+            if /i not "%docType%"=="bat" (
+                if /i not "%docType%"=="txt" (
+                    echo 文件不支持
+                    timeout /t 3 /nobreak >nul
+                    goto :AddDoc
+                )
             )
-        )
+            if /i "%docType%"=="txt" set docType=txt
+            if /i "%docType%"=="bat" set docType=bat
         rem 文章标题不能含有英引号
         echo 文章标题不能含有奇数引号
-        set /p Blogtitle=文章标题：
-        if /i "%Blogtitle%"=="q" goto :cpBlog
+        echo 若文件名是标题请直接回车
+        set newDocTitle=none
+        set /p newDocTitle=文章标题：
+        if /i "%newDocTitle%"=="q" goto :AddDoc
+        if "%newDocTitle%"=="none" call :GetDocName %docPath%
+        goto :Jump1
+            :GetDocName
+                set newDocTitle=%~n1
+                goto :eof
+        :Jump1
+    rem 预览文章(Text)
+        rem 为了确认是否为GB*编码
+        if /i "%docType%"=="txt" (
+            cls
+            type %docPath%
+            echo.
+            echo.
+            echo 如果文章显示正常 "回车" 开始导入
+            echo 如果异常输入"q"退出并检查文章及其编码
+            set addTextCheck=none
+            set /p addTextCheck=请输入:
+            if /i "!addTextCheck!"=="none" (
+                rem 占位
+            ) else (
+                goto :AddDoc
+            )
+        )
     rem 开始导入文章
         cls
         rem 预处理
-        call Blognum.bat
-        if "%Blognum:~-1%"==" " set Blognum=%Blognum:~0,-1%
-        set /a NewBlognum=%Blognum%+1
-        call BlogAnum.bat
-        if "%BlogAnum:~-1%"==" " set BlogAnum=%BlogAnum:~0,-1%
-        set /a NewBlogAnum=%BlogAnum%+1
+            set docNum=none
+            call docnum.bat
+            if "%docNum:~-1%"==" " set docNum=%docNum:~0,-1%
+            set newDocNum=none
+            set /a newDocNum=%docNum%+1
+            call docallnum.bat
+            if "%docAllnum:~-1%"==" " set docAllnum=%docAllnum:~0,-1%
+            set /a newDocAllNum=%docAllnum%+1
         rem 写入
             rem 写入新配置
-                echo set Blognum=%NewBlognum% >Blognum.bat
-                echo set BlogAnum=%NewBlogAnum% >BlogAnum.bat
-                echo set NEB%NewBlogAnum%=E>>Blogexist.bat
-                echo if not %%NEB%NewBlogAnum%%%==Del echo %NewBlogAnum%.%Blogtitle% >>Bloglist.bat
+                echo set docNum=%newDocNum% >docnum.bat
+                echo set docAllnum=%newDocAllNum% >docallnum.bat
+                echo set NEB%newDocAllNum%=E>>docexist.bat
+                echo set title%newDocAllNum%=%newDocTitle% >>doctitle.bat
+                echo if not %%NEB%newDocAllNum%%%==Del echo %newDocAllNum%.%%title%newDocAllNum%%% >>doclist.bat
             rem 写入日志
-                echo %date:~0,-2%%time% copy %Docname% to .\odyink\Blog\ (num:%NewBlogAnum%) >>Bloglog.log
+                echo %date:~0,-2%%time% copy %docPath% to .\odyink\doc\ (num:%newDocAllNum%) >>doclog.log
             rem 复制文章
-                if exist %Docname% copy %Docname% Blog\%NewBlogAnum%.%Doctype% >nul
-        echo 导入完毕
-        timeout /t 2 /nobreak >nul
-        goto :cpBlog
+                if exist %docPath% copy %docPath% doc\%newDocAllNum%.%docType% >nul
+                if exist doc\%newDocAllNum%.%docType% (
+                    echo 导入成功
+                ) else (
+                    echo 导入失败
+                )
+            timeout /t 2 /nobreak >nul
+            goto :AddDoc
     rem 文章不存在
-        :CantcpBlog
+        :NotExistDoc
         cls
         echo 文章不存在
         timeout /t 3 /nobreak >nul
-        goto :cpBlog
+        goto :AddDoc
 rem 删除文章
-    :DBlog
-    cls
-    set willDelBlog=
-    set DelBlogyn=
-    call Bloglist.bat
-    call Blognum.bat
+    :DelDoc
+    set docNum=none
+    call docnum.bat
     rem 输入需删除文章的信息
-        :DelBlog
+        :InputDelDocNum
         echo 输入q退出删除
-        set /p willDelBlog=要删除文章序号：
-        if /i "%willDelBlog%"=="q" goto :menu
-        if not exist Blog\"%willDelBlog%.*t" goto :DelBlogE
+        set willDelDocNum=none
+        set /p willDelDocNum=要删除文章序号：
+        if /i "%willDelDocNum%"=="q" (
+            set inputDocNum=none
+            goto :ViewDoc
+        )
+        if not exist doc\"%willDelDocNum%.*t" goto :DelDocError
         :BackDelyn
-        set /p DelBlogyn=是否删除yn:
-        if /i "%DelBlogyn%"=="y" goto :DelBlognow
-        if /i "%DelBlogyn%"=="n" goto :DelBlog
+        set delDocyn=none
+        set /p delDocyn=是否删除yn:
+        if /i "%delDocyn%"=="y" goto :DelDocNow
+        if /i "%delDocyn%"=="n" goto :InputDelDocNum
         echo 输入无效
         goto :BackDelyn
     rem 开始删除文章
-        :DelBlognow
-        echo set NEB%willDelBlog%=Del >>Blogdel.bat
-        set /a NewBlognum=%Blognum%-1
-        echo set Blognum=%NewBlognum% >Blognum.bat
-        echo %date:~0,-2%%time% del %willDelBlog% from .\odyink\Blog\ (num:%willDelBlog%) >>Bloglog.log
-        del /q Blog\%willDelBlog%.*t
+        :DelDocNow
+        echo set NEB%willDelDocNum%=Del >>docdel.bat
+        set /a newDocNum=%docNum%-1
+        echo set docNum=%newDocNum% >docnum.bat
+        echo %date:~0,-2%%time% del %willDelDocNum% from .\odyink\doc\ (num:%willDelDocNum%) >>doclog.log
+        del /q doc\%willDelDocNum%.*t
         echo 删除完毕
         timeout /t 2 /nobreak >nul
         cls
-        goto :DBlog
+        goto :ViewDoc
     rem 文章不存在
-        :DelBlogE
+        :DelDocError
         echo 文章不存在
-        goto :DelBlog
+        goto :InputDelDocNum
+rem 设置
+    :Setting
+    cls
+    echo c.清除数据
+    echo d.卸载软件
+    echo q.返回主页
+    echo.
+    set inputSettingNum=none
+    set /p inputSettingNum=请输入:
+    if /i "%inputSettingNum%"=="c" goto :CleanData
+    if /i "%inputSettingNum%"=="d" goto :RemoveOdyink
+    if /i "%inputSettingNum%"=="q" goto :ViewDoc
+    cls
+    echo 输入无效
+    timeout /t 2 /nobreak >nul
+    goto :Setting
+rem 卸载
+    :RemoveOdyink
+    cls
+    echo 输入yes并回车以确认卸载Odyink
+    echo 输入其他皆为取消卸载
+    set delOdyinkyn=none
+    set /p delOdyinkyn=请输入:
+    if /i not "%delOdyinkyn%"=="yes" goto :Setting
+    cls
+    echo 卸载将在60秒后开始
+    echo 您可以回车以立即卸载
+    echo 也可以关闭程序中断卸载
+    timeout /t 60 >nul
+    cd /d %~p0
+    rmdir /s /q %~p0odyink\
+    del /f /s /q %~f0 & exit
+    exit
+rem 清除数据
+    :CleanData
+    cls
+    echo 输入yes并回车以确认清除数据
+    echo 输入其他皆为取消
+    set cleanOdyinkyn=none
+    set /p cleanOdyinkyn=请输入:
+    if /i not "%cleanOdyinkyn%"=="yes" goto :Setting
+    cls
+    echo 输入yes并回车再次确认
+    echo 输入其他皆为取消
+    set cleanOdyinkyn=none
+    set /p cleanOdyinkyn=请输入:
+    if /i not "%cleanOdyinkyn%"=="yes" goto :Setting
+    cd /d %~p0
+    rmdir /s /q %~p0odyink\
+    echo 输入re从零开始的异世界生活
+    cls
+    echo 输入re从零开始
+    echo 回车退出
+    set reOrNot=none
+    set /p reOrNot=
+    cls
+    if /i "%reOrNot%"=="re从零开始的异世界生活" start https://www.bilibili.com/bangumi/play/ep373924
+    if /i "%reOrNot%"=="re" (
+        cmd /c %~f0
+    ) else (
+        exit
+    )
 rem 安装
-    :install
+    :Install
     echo 回车安装Odyink
     pause >nul
     cls
-    mkdir odyink\Blog 2>nul
-    cd Odyink
-    if exist Blog\*.*t del /f /s /q Blog\*.*t >nul
+    mkdir odyink\doc 2>nul
+    cd odyink\
+    if exist doc\*.*t del /f /s /q doc\*.*t >nul
     rem 新建文件写入信息
-        echo set Blognum=1 >Blognum.bat
-        echo set BlogAnum=0 >BlogAnum.bat
-        echo set NEB0=E>>Blogexist.bat
-        echo call Blogexist.bat >>Bloglist.bat
-        echo call Blogdel.bat>>Bloglist.bat
-        echo if not %%NEB0%%==Del echo 0.欢迎使用Odyink>>Bloglist.bat
-        echo rem Blogdel>Blogdel.bat
-        echo [Bloglog]>Bloglog.log
-        echo Odyink是由Andy(python)和SMG(Batch)制作的命令行个人博客软件 >>Blog\0.txt
-    rem 为了兼容老版本Odyink User
-        echo ServerOK >ServerOK
+        echo set docNum=1 >docnum.bat
+        echo set docAllnum=0 >docallnum.bat
+        echo set NEB0=E>>docexist.bat
+        echo set title0=欢迎使用Odyink >doctitle.bat
+        echo call docexist.bat >>doclist.bat
+        echo call docdel.bat>>doclist.bat
+        echo call doctitle.bat>>doclist.bat
+        echo if not %%NEB0%%==Del echo 0.%%title0%%>>doclist.bat
+        echo rem Docdel>docdel.bat
+        echo [Doclog]>doclog.log
+        echo Odyink是由Andy(python)和SMG(Batch)制作的命令行个人博客软件 >>doc\0.txt
     echo 安装完毕
     timeout /t 2 /nobreak >nul
+    cls
+    echo 设置网站路径为：%~dp0odyink\
+    echo 回车结束安装
+    pause >nul
     %0
